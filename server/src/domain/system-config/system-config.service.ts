@@ -113,9 +113,9 @@ export class SystemConfigService {
 
       const config = await this.core.getConfig();
       if (
-        GithubVersion.major > serverVersion.major ||
-        GithubVersion.minor > serverVersion.minor ||
-        GithubVersion.patch > serverVersion.patch
+        GithubVersion.major !== serverVersion.major ||
+        GithubVersion.minor !== serverVersion.minor ||
+        GithubVersion.patch !== serverVersion.patch
       ) {
         this.logger.debug(
           `New version detected : v${GithubVersion.major}.${GithubVersion.minor}.${GithubVersion.patch}`,
