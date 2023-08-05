@@ -8,7 +8,13 @@ import {
   VideoCodec,
 } from '@app/infra/entities';
 import { BadRequestException } from '@nestjs/common';
-import { newJobRepositoryMock, newSystemConfigRepositoryMock } from '@test';
+import {
+  newCryptoRepositoryMock,
+  newJobRepositoryMock,
+  newSystemConfigRepositoryMock,
+  newUserRepositoryMock,
+} from '@test';
+import { ICryptoRepository, IUserRepository } from '..';
 import { IJobRepository, JobName, QueueName } from '../job';
 import { defaults, SystemConfigValidator } from './system-config.core';
 import { ISystemConfigRepository } from './system-config.repository';
@@ -63,17 +69,22 @@ const updatedConfig = Object.freeze<SystemConfig>({
   storageTemplate: {
     template: '{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}',
   },
+  availableImmichVersion: undefined,
 });
 
 describe(SystemConfigService.name, () => {
   let sut: SystemConfigService;
+  let userMock: IUserRepository;
+  let cryptoMock: jest.Mocked<ICryptoRepository>;
   let configMock: jest.Mocked<ISystemConfigRepository>;
   let jobMock: jest.Mocked<IJobRepository>;
 
   beforeEach(async () => {
+    userMock = newUserRepositoryMock();
+    cryptoMock = newCryptoRepositoryMock();
     configMock = newSystemConfigRepositoryMock();
     jobMock = newJobRepositoryMock();
-    sut = new SystemConfigService(configMock, jobMock);
+    sut = new SystemConfigService(userMock, cryptoMock, configMock, jobMock);
   });
 
   it('should work', () => {

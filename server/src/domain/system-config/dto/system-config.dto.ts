@@ -6,6 +6,7 @@ import { SystemConfigJobDto } from './system-config-job.dto';
 import { SystemConfigOAuthDto } from './system-config-oauth.dto';
 import { SystemConfigPasswordLoginDto } from './system-config-password-login.dto';
 import { SystemConfigStorageTemplateDto } from './system-config-storage-template.dto';
+import { SystemConfigImmichVersion } from './system-config-version.dto';
 
 export class SystemConfigDto {
   @Type(() => SystemConfigFFmpegDto)
@@ -32,6 +33,11 @@ export class SystemConfigDto {
   @ValidateNested()
   @IsObject()
   job!: SystemConfigJobDto;
+
+  @Type(() => SystemConfigImmichVersion)
+  @ValidateNested()
+  @IsObject()
+  availableImmichVersion?: SystemConfigImmichVersion;
 }
 
 export function mapConfig(config: SystemConfig): SystemConfigDto {

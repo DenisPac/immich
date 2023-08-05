@@ -6,6 +6,7 @@ import {
   newCryptoRepositoryMock,
   newJobRepositoryMock,
   newStorageRepositoryMock,
+  newSystemConfigRepositoryMock,
   newUserRepositoryMock,
 } from '@test';
 import { when } from 'jest-when';
@@ -15,6 +16,7 @@ import { AuthUserDto } from '../auth';
 import { ICryptoRepository } from '../crypto';
 import { IJobRepository, JobName } from '../job';
 import { IStorageRepository } from '../storage';
+import { ISystemConfigRepository } from '../system-config/system-config.repository';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { IUserRepository } from './user.repository';
 import { UserService } from './user.service';
@@ -54,6 +56,7 @@ const adminUser: UserEntity = Object.freeze({
   assets: [],
   storageLabel: 'admin',
   externalPath: null,
+  acknowledgeLatestVersion: false,
 });
 
 const immichUser: UserEntity = Object.freeze({
@@ -73,6 +76,7 @@ const immichUser: UserEntity = Object.freeze({
   assets: [],
   storageLabel: null,
   externalPath: null,
+  acknowledgeLatestVersion: false,
 });
 
 const updatedImmichUser: UserEntity = Object.freeze({
@@ -92,6 +96,7 @@ const updatedImmichUser: UserEntity = Object.freeze({
   assets: [],
   storageLabel: null,
   externalPath: null,
+  acknowledgeLatestVersion: false,
 });
 
 const adminUserResponse = Object.freeze({
@@ -119,6 +124,7 @@ describe(UserService.name, () => {
   let assetMock: jest.Mocked<IAssetRepository>;
   let jobMock: jest.Mocked<IJobRepository>;
   let storageMock: jest.Mocked<IStorageRepository>;
+  let configMock: jest.Mocked<ISystemConfigRepository>;
 
   beforeEach(async () => {
     cryptoRepositoryMock = newCryptoRepositoryMock();
@@ -127,8 +133,9 @@ describe(UserService.name, () => {
     jobMock = newJobRepositoryMock();
     storageMock = newStorageRepositoryMock();
     userMock = newUserRepositoryMock();
+    configMock = newSystemConfigRepositoryMock();
 
-    sut = new UserService(userMock, cryptoRepositoryMock, albumMock, assetMock, jobMock, storageMock);
+    sut = new UserService(userMock, cryptoRepositoryMock, albumMock, assetMock, jobMock, storageMock, configMock);
 
     when(userMock.get).calledWith(adminUser.id).mockResolvedValue(adminUser);
     when(userMock.get).calledWith(adminUser.id, undefined).mockResolvedValue(adminUser);

@@ -6,9 +6,12 @@ import { IAlbumRepository } from '../album/album.repository';
 import { IAssetRepository } from '../asset/asset.repository';
 import { AuthUserDto } from '../auth';
 import { ICryptoRepository } from '../crypto/crypto.repository';
+import { serverVersion } from '../domain.constant';
 import { IEntityJob, IJobRepository, JobName } from '../job';
 import { StorageCore, StorageFolder } from '../storage';
 import { IStorageRepository } from '../storage/storage.repository';
+import { ISystemConfigRepository } from '../system-config';
+import { SystemConfigCore } from '../system-config/system-config.core';
 import { CreateUserDto, UpdateUserDto, UserCountDto } from './dto';
 import {
   CreateProfileImageResponseDto,
@@ -18,6 +21,7 @@ import {
   UserCountResponseDto,
   UserResponseDto,
 } from './response-dto';
+import { AvailableVersionResponseDto } from './response-dto/user-available-version.dto';
 import { UserCore } from './user.core';
 import { IUserRepository } from './user.repository';
 
@@ -26,6 +30,7 @@ export class UserService {
   private logger = new Logger(UserService.name);
   private userCore: UserCore;
   private storageCore = new StorageCore();
+  private systemConfigCore: SystemConfigCore;
 
   constructor(
     @Inject(IUserRepository) private userRepository: IUserRepository,
@@ -35,8 +40,10 @@ export class UserService {
     @Inject(IAssetRepository) private assetRepository: IAssetRepository,
     @Inject(IJobRepository) private jobRepository: IJobRepository,
     @Inject(IStorageRepository) private storageRepository: IStorageRepository,
+    @Inject(ISystemConfigRepository) repository: ISystemConfigRepository,
   ) {
     this.userCore = new UserCore(userRepository, cryptoRepository);
+    this.systemConfigCore = new SystemConfigCore(repository);
   }
 
   async getAll(authUser: AuthUserDto, isAll: boolean): Promise<UserResponseDto[]> {
@@ -51,6 +58,16 @@ export class UserService {
     }
 
     return mapUser(user);
+  }
+
+  async aknowledgeLatestVersion(authUser: AuthUserDto): Promise<boolean> {
+    const user = await this.userCore.get(authUser.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    user.acknowledgeLatestVersion = true;
+    await this.userCore.updateUser(authUser, user.id, user);
+    return true;
   }
 
   async getMe(authUser: AuthUserDto): Promise<UserResponseDto> {
@@ -74,6 +91,24 @@ export class UserService {
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const createdUser = await this.userCore.createUser(createUserDto);
     return mapUser(createdUser);
+  }
+
+  async latestImmichVersionAvailable(authUser: AuthUserDto): Promise<AvailableVersionResponseDto> {
+    const user = await this.userCore.get(authUser.id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const config = await this.systemConfigCore.getConfig();
+    if (
+      serverVersion.major !== config.availableImmichVersion?.major &&
+      serverVersion.minor !== config.availableImmichVersion?.minor &&
+      serverVersion.patch !== config.availableImmichVersion?.patch &&
+      config.availableImmichVersion &&
+      !user.acknowledgeLatestVersion
+    )
+      return { availableVersion: config.availableImmichVersion, available: true };
+    else return { available: false };
   }
 
   async update(authUser: AuthUserDto, dto: UpdateUserDto): Promise<UserResponseDto> {

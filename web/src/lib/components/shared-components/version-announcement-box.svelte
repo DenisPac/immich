@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getGithubVersion } from '$lib/utils/get-github-version';
   import { onMount } from 'svelte';
   import FullScreenModal from './full-screen-modal.svelte';
-  import type { ServerVersionReponseDto } from '@api';
+  import { api, type ServerVersionReponseDto } from '@api';
   import Button from '../elements/buttons/button.svelte';
+  import { handleError } from '$lib/utils/handle-error';
 
   export let serverVersion: ServerVersionReponseDto;
 
@@ -15,22 +15,32 @@
     return `v${major}.${minor}.${patch}`;
   }
 
-  function onAcknowledge() {
-    // Store server version to prevent the notification
-    // from showing again.
-    localStorage.setItem('appVersion', githubVersion);
+  const onAcknowledge = async () => {
+    try {
+      await api.userApi.aknowledgeLatestVersion();
+    } catch (err) {
+      handleError(err, 'Unable to save it');
+    }
+
     showModal = false;
-  }
+  };
 
   onMount(async () => {
     try {
-      githubVersion = await getGithubVersion();
+      const { data } = await api.userApi.getLatestImmichVersionAvailable();
+      if (data.availableVersion) {
+        githubVersion = semverToName({
+          major: data.availableVersion.major,
+          minor: data.availableVersion.minor,
+          patch: data.availableVersion.patch,
+        });
+      }
+
       if (localStorage.getItem('appVersion') === githubVersion) {
         // Updated version has already been acknowledged.
         return;
       }
-
-      if (githubVersion !== serverVersionName) {
+      if (data.available) {
         showModal = true;
       }
     } catch (err) {
